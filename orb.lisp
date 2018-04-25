@@ -59,7 +59,8 @@
   (:main))
 
 (define-actor orb ((:visual "media/orb.png")
-                   (:tile-count (3 1))
+                   (:default-depth 95)
+                   (:tile-count (1 1))
                    (swap-up nil nil))
   (:main
    (setf swap-up (color-control swap-up))
@@ -113,21 +114,21 @@
    (when (> (pad-1d 1) 0)
      (spawn 'bullet (v! 0 0)))))
 
-(define-actor bullet ((:visual "media/shot.png"))
+(define-actor bullet ((:visual "media/shot.png")
+                      (:default-depth 70))
   (:main
    (move-forward 25)
    (unless (in-world-p)
      (die))))
 
 (define-actor missile ((:visual "media/missile2.png")
-                       (:tile-count (3 1))
+                       (:default-depth 60)
                        (orb nil t))
   (:main
    (unless orb
      (die))
    (move-towards orb 0.3)
    (turn-towards orb 0.3)
-   ;;(setf (scale) 2f0)
    (when (coll-with 'bullet)
      (die))
    (when (< (distance-to orb) 4)
@@ -136,38 +137,40 @@
 (defun do-wall (orb started ang)
   (when orb
     (unless started
-      (turn-left ang)
-      (setf (scale) 4f0)))
-   (move-forward 14f0)
+      (turn-left ang)))
+   (move-forward 2f0)
    (unless (in-world-p)
      (die))
    t)
 
 (define-actor wall-red ((:visual "media/wallPart.png")
-                         (:tile-count (3 1))
+                        (:tile-count (3 1))
+                        (:default-depth 90)
                          (orb nil t)
                          (ang nil t)
                          (started nil t))
   (:main
    (set-frame 0)
-   (setf started (do-wall orb started ang ))))
+   (setf started (do-wall orb started ang))))
 
 (define-actor wall-green ((:visual "media/wallPart.png")
-                         (:tile-count (3 1))
+                          (:tile-count (3 1))
+                          (:default-depth 90)
                          (orb nil t)
                          (ang nil t)
                          (started nil t))
   (:main
    (set-frame 1)
-   (setf started (do-wall orb started ang ))))
+   (setf started (do-wall orb started ang))))
 
 (define-actor wall-blue ((:visual "media/wallPart.png")
                          (:tile-count (3 1))
+                         (:default-depth 90)
                          (orb nil t)
                          (ang nil t)
                          (started nil t))
   (:main
    (set-frame 2)
-   (setf started (do-wall orb started ang ))))
+   (setf started (do-wall orb started ang))))
 
 ;;------------------------------------------------------------
