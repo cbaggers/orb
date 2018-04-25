@@ -27,12 +27,11 @@
                      wall-blue)
                    cn)))
     (loop :for i :below 120
-       :for j := (* (float (- i 60) 0f0) 20) :do
+       :for j := (* (float (- i 60) 0f0) 15) :do
        (spawn col
               (v2:+ start-pos (v2:*s step j))
               :orb *orb*
-              :ang ang
-              :col cn))))
+              :ang ang))))
 
 (define-god ((missile-timer (make-stepper (seconds 60)
                                           (seconds 60)))
