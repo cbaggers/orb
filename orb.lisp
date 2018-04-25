@@ -3,7 +3,7 @@
 ;;------------------------------------------------------------
 
 (setf daft::*system-hack* :orb)
-(setf *screen-height-in-game-units* 2000f0)
+(setf *screen-height-in-game-units* 1600f0)
 
 (defvar *orb* nil)
 (defvar *ship* nil)
@@ -36,21 +36,28 @@
 
 (define-god ((missile-timer (make-stepper (seconds 60)
                                           (seconds 60)))
-             (wall-timer (make-stepper (seconds 1)
-                                       (seconds 1))))
+             (wall-timer (make-stepper (seconds 4)
+                                       (seconds 4)))
+             (bkg (spawn 'background (v! 0 0)) t))
+  (:setup
+   (when *orb*
+     (kill *orb*))
+   (setf *orb* (spawn 'orb (v! 0 0)))
+   (incf (slot-value *orb* 'daft::anim-frame))
+   (when *ship*
+     (kill *ship*))
+   (setf *ship* (spawn 'ship (v! 0 0) :orb *orb*))
+   (change-state :main))
   (:main
-   (unless *orb*
-     (print "a?")
-     (setf *orb* (spawn 'orb (v! 0 0)))
-     (incf (slot-value *orb* 'daft::anim-frame)))
-   (unless *ship*
-     (setf *ship* (spawn 'ship (v! 0 0) :orb *orb*)))
    (when (funcall missile-timer)
      (let ((mpos (v2:*s (v2:from-angle (random 2pi-f))
                         2200f0)))
        (spawn 'missile mpos :orb *orb*)))
    (when (funcall wall-timer)
      (spawn-wall))))
+
+(define-actor background ((:visual "media/background.png"))
+  (:main))
 
 (define-actor orb ((:visual "media/orb.png")
                    (:tile-count (3 1))
