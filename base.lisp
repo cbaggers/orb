@@ -190,13 +190,12 @@
      (die))))
 
 (define-actor missile ((:visual "media/missile2.png")
-                       (:default-depth 60)
-                       (orb nil t))
+                       (:default-depth 60))
   (:main
-   (unless orb
+   (unless *orb*
      (die))
-   (move-towards orb 0.3)
-   (turn-towards orb 0.3)
+   (move-towards *orb* 0.3)
+   (turn-towards *orb* 0.3)
    (when (coll-with 'bullet)
      (die))
    (when (coll-with 'orb)
@@ -213,7 +212,6 @@
 (define-actor wall-red ((:visual "media/wallPart.png")
                         (:tile-count (3 1))
                         (:default-depth 90)
-                        (orb nil t)
                         (ang nil t)
                         (started nil t)
                         (lifespawn (after (seconds 10) t) t))
@@ -232,10 +230,9 @@
 (define-actor wall-green ((:visual "media/wallPart.png")
                           (:tile-count (3 1))
                           (:default-depth 90)
-                          (orb nil t)
                           (ang nil t)
                           (started nil t)
-                          (lifespawn (after (seconds 10) t) t))
+                          (lifespawn (after (seconds 20) t) t))
   (:setup
    (turn-left ang)
    (set-frame 1)
@@ -251,7 +248,6 @@
 (define-actor wall-blue ((:visual "media/wallPart.png")
                          (:tile-count (3 1))
                          (:default-depth 90)
-                         (orb nil t)
                          (ang nil t)
                          (started nil t)
                          (lifespawn (after (seconds 10) t) t))
