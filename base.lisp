@@ -15,13 +15,14 @@
 
 (defvar *colors* '(:red :green :blue))
 (defvar *since* (now))
+(defvar *best* 0f0)
 
 (defun spawn-wall ()
   (let* ((ang (* 0.5pi-f (random 4)))
          (dist 1000f0)
          (far-center (v2:*s (v2:from-angle ang) dist))
          (step-size 15f0)
-         (count 100)
+         (count 150)
          (half-count (float (floor count 2) 0f0))
          (to-spawn (elt '(wall-red
                           wall-green
@@ -37,8 +38,8 @@
               :orb *orb*
               :ang (+ (degrees ang) 180)))))
 
-(define-god ((missile-timer (make-stepper (seconds 60)
-                                          (seconds 60)))
+(define-god ((missile-timer (make-stepper (seconds 30)
+                                          (seconds 30)))
              (wall-timer (make-stepper (seconds 4)
                                        (seconds 4)))
              (bkg (spawn 'background (v! 0 0)) t))
@@ -53,6 +54,7 @@
    (spawn-time (v! 0 550))
    (change-state :main))
   (:main
+   (setf *best* (max *best* (- (now) *since*)))
    (when (funcall missile-timer)
      (let ((mpos (v2:*s (v2:from-angle (random 2pi-f))
                         2200f0)))
@@ -64,21 +66,40 @@
   (as *god*
     (change-state :setup)))
 
-(define-actor time-counter
+(define-actor val-counter
     ((:visual "media/nums/nums.png")
      (:tile-count (10 1))
      (:default-depth 2)
-     (multiple 1 t))
+     (multiple 1 t)
+     (counts (lambda () 0f0)))
   (:main
-   (set-frame (mod (floor (- (now) *since*) multiple) 10))))
+   (set-frame (mod (floor (funcall counts) multiple) 10))))
+
+(defun since ()
+  (- (now) *since*))
+
+(defun best ()
+  *best*)
 
 (defun spawn-time (pos)
   (setf *since* (now))
-  (kill-all-of 'time-counter)
-  (spawn! 'time-counter (v2:+ pos (v! 30 0)) :multiple 0.1)
-  (spawn! 'time-counter (v2:+ pos (v! 10 0)) :multiple 1)
-  (spawn! 'time-counter (v2:+ pos (v! -10 0)) :multiple 10)
-  (spawn! 'time-counter (v2:+ pos (v! -30 0)) :multiple 100))
+  (kill-all-of 'val-counter)
+  (spawn! 'val-counter (v2:+ pos (v! 30 0)) :multiple 0.1
+          :counts #'since)
+  (spawn! 'val-counter (v2:+ pos (v! 10 0)) :multiple 1
+          :counts #'since)
+  (spawn! 'val-counter (v2:+ pos (v! -10 0)) :multiple 10
+          :counts #'since)
+  (spawn! 'val-counter (v2:+ pos (v! -30 0)) :multiple 100
+          :counts #'since)
+  (spawn! 'val-counter (v2:+ pos (v! 30 -40)) :multiple 0.1
+          :counts #'best)
+  (spawn! 'val-counter (v2:+ pos (v! 10 -40)) :multiple 1
+          :counts #'best)
+  (spawn! 'val-counter (v2:+ pos (v! -10 -40)) :multiple 10
+          :counts #'best)
+  (spawn! 'val-counter (v2:+ pos (v! -30 -40)) :multiple 100
+          :counts #'best))
 
 (define-actor background ((:visual "media/background.png")
                           (:default-depth 95)))
@@ -86,11 +107,19 @@
 (define-actor orb ((:visual "media/orb.png")
                    (:default-depth 20)
                    (:tile-count (3 1))
-                   (swap-up nil nil))
+                   (swap-up nil nil)
+                   (spark (each (seconds 0.05)
+                            (let* ((ang (random 2pi-f))
+                                   (dir (v2:from-angle ang)))
+                              (spawn 'sparkle (v2:*s dir 20f0)
+                                     :ang (degrees ang)
+                                     :speed 15
+                                     :col (get-frame))))))
   (:setup
    (next-frame)
    (change-state :main))
   (:main
+   (funcall spark)
    (setf swap-up (color-control swap-up))
    (failed)))
 
@@ -188,13 +217,38 @@
    (unless (in-world-p)
      (die))))
 
+(define-actor sparkle ((:visual "media/sparkles.png")
+                       (:tile-count (3 3))
+                       (:default-depth 90)
+                       (col 0)
+                       (ang 0f0 t)
+                       (speed 500 t)
+                       (do-scale
+                           (then
+                             (before (seconds 1.4)
+                               (setf (scale) (max 0 (- 1f0 %progress%))))
+                             (once (die))))
+                       (range nil t))
+  (:setup
+   (turn-left ang)
+   (setf range (list (* col 3)
+                     (- (* (1+ col) 3) 1)))
+   (set-frame (* col 3))
+   (change-state :main))
+  (:main
+   ;;(advance-frame (per-second 30) range)
+   (move-forward (per-second speed))
+   (funcall do-scale)
+   (unless (in-world-p)
+     (die))))
+
 (define-actor missile ((:visual "media/missile2.png")
                        (:default-depth 60))
   (:main
    (unless *orb*
      (die))
-   (move-towards *orb* 0.3)
-   (turn-towards *orb* 0.3)
+   (move-towards *orb* (per-second 25))
+   (turn-towards *orb* (per-second 18))
    (when (coll-with 'bullet)
      (die))
    (when (coll-with 'orb)
@@ -204,16 +258,16 @@
 (defun do-wall ()
   (when (< (random 500f0) 1f0)
     (spawn 'dead-white (v! 0 0) :speed 0f0))
-  (move-forward 2f0)
-  (unless (in-world-p)
-    (die)))
+  (move-forward (per-second 120f0)))
+
+(defvar *wall-time* 30f0)
 
 (define-actor wall-red ((:visual "media/wallPart.png")
                         (:tile-count (3 1))
                         (:default-depth 90)
                         (ang nil t)
                         (started nil t)
-                        (lifespawn (after (seconds 10) t) t))
+                        (lifespawn (after (seconds *wall-time*) t) t))
   (:setup
    (turn-left ang)
    (set-frame 0)
@@ -231,7 +285,7 @@
                           (:default-depth 90)
                           (ang nil t)
                           (started nil t)
-                          (lifespawn (after (seconds 20) t) t))
+                          (lifespawn (after (seconds *wall-time*) t) t))
   (:setup
    (turn-left ang)
    (set-frame 1)
@@ -249,7 +303,7 @@
                          (:default-depth 90)
                          (ang nil t)
                          (started nil t)
-                         (lifespawn (after (seconds 10) t) t))
+                         (lifespawn (after (seconds *wall-time*) t) t))
   (:setup
    (turn-left ang)
    (set-frame 2)
