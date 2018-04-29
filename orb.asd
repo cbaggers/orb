@@ -8,4 +8,5 @@
   :depends-on (:daft)
   :serial t
   :components ((:file "package")
-               (:file "base")))
+               (:file "base")
+               (:file "ship")))

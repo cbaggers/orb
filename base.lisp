@@ -6,7 +6,6 @@
   (bullets :channels 20)
   (reset :channels 2))
 
-(setf daft::*system-hack* :orb)
 (setf *screen-height-in-game-units* 1200f0)
 
 (defvar *orb* nil)
