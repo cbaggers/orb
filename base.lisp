@@ -63,6 +63,8 @@
      (let ((mpos (v2:*s (v2:from-angle (random 2pi-f))
                         2200f0)))
        (spawn 'missile mpos :orb *orb*)))
+   (when (key-down-p key.escape)
+     (stop))
    (when (funcall wall-timer)
      (spawn-wall))))
 
