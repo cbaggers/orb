@@ -16,7 +16,7 @@
 ;;------------------------------------------------------------
 
 (defun run ()
-  (daft :start))
+  (daft :start -1 t))
 
 (defun stop ()
   (daft :stop))
