@@ -2,6 +2,10 @@
 
 ;;------------------------------------------------------------
 
+(define-audio
+  (bullets :channels 20)
+  (reset :channels 2))
+
 (setf daft::*system-hack* :orb)
 (setf *screen-height-in-game-units* 1200f0)
 
@@ -47,6 +51,7 @@
    (when *orb*
      (kill *orb*))
    (setf *orb* (spawn 'orb (v! 0 0)))
+   (play-track "media/audio/far-away.ogg")
    (when *ship*
      (kill *ship*))
    (setf *ship* (spawn 'ship (v! 0 0) :orb *orb*))
@@ -84,16 +89,14 @@
 (defun spawn-time (pos)
   (setf *since* (now))
   (kill-all-of 'val-counter)
-  (spawn! 'val-counter (v2:+ pos (v! 30 0)) :multiple 0.1
-          :counts #'since)
+
   (spawn! 'val-counter (v2:+ pos (v! 10 0)) :multiple 1
           :counts #'since)
   (spawn! 'val-counter (v2:+ pos (v! -10 0)) :multiple 10
           :counts #'since)
   (spawn! 'val-counter (v2:+ pos (v! -30 0)) :multiple 100
           :counts #'since)
-  (spawn! 'val-counter (v2:+ pos (v! 30 -40)) :multiple 0.1
-          :counts #'best)
+
   (spawn! 'val-counter (v2:+ pos (v! 10 -40)) :multiple 1
           :counts #'best)
   (spawn! 'val-counter (v2:+ pos (v! -10 -40)) :multiple 10
@@ -105,7 +108,7 @@
                           (:default-depth 95)))
 
 (define-actor orb ((:visual "media/orb.png")
-                   (:default-depth 20)
+                   (:default-depth 70)
                    (:tile-count (3 1))
                    (swap-up nil nil)
                    (spark (each (seconds 0.05)
@@ -114,14 +117,15 @@
                               (spawn 'sparkle (v2:*s dir 20f0)
                                      :ang (degrees ang)
                                      :speed 15
-                                     :col (get-frame))))))
+                                     :col (get-frame)))))
+                   (reset (load-audio "media/audio/start-level.wav")))
   (:setup
    (next-frame)
    (change-state :main))
   (:main
    (funcall spark)
    (setf swap-up (color-control swap-up))
-   (failed)))
+   (failed reset)))
 
 (defun color-control (swap-up)
   (flet ((spawn-stars ()
@@ -142,22 +146,22 @@
         (setf swap-up t))))
   swap-up)
 
-(defun failed ()
+(defun failed (&optional sound)
   (cond
     ((and (coll-with 'wall-red)
           (/= (get-frame) 0))
      (kill-all-of 'wall-red)
-     (hit-wall))
+     (hit-wall sound))
     ((and (coll-with 'wall-green)
           (/= (get-frame) 1))
      (kill-all-of 'wall-green)
-     (hit-wall))
+     (hit-wall sound))
     ((and (coll-with 'wall-blue)
           (/= (get-frame) 2))
      (kill-all-of 'wall-blue)
-     (hit-wall))))
+     (hit-wall sound))))
 
-(defun hit-wall ()
+(defun hit-wall (sound)
   (flet ((splode-all (kind-name)
            (loop :for x :across
               (daft::this-frames-actors
@@ -166,6 +170,8 @@
     (splode-all 'wall-red)
     (splode-all 'wall-green)
     (splode-all 'wall-blue)
+    (when sound
+      (play-sound 'reset sound))
     (spawn-time (v! 0 550))))
 
 (define-actor ship ((:visual "media/ship.png")
@@ -174,7 +180,12 @@
                     (orb nil t)
                     (swap-up nil)
                     (vel (v! 0 0))
-                    (last-shot (now)))
+                    (last-shot (now))
+                    (last-sound (now))
+                    (bullet (load-audio "media/audio/pew.wav"))
+                    (reset (load-audio "media/audio/start-level.wav"))
+                    (shot-time 0.01)
+                    (shot-sound-mult 3))
   (:main
    (let* ((dir (gamepad-2d (gamepad) 0)))
      (v2:incf vel (v2:*s dir (per-second 80f0)))
@@ -183,9 +194,12 @@
      (let ((ang (degrees (v2:angle-from (compass-dir) vel))))
        (turn-left (per-second (* ang 10f0)))))
    (setf swap-up (color-control swap-up))
-   (failed)
+   (failed reset)
    (when (and (> (pad-1d 1) 0)
-              (> (- (now) last-shot) 0.01))
+              (> (- (now) last-shot) shot-time))
+     (when (> (- (now) last-sound) (* shot-time shot-sound-mult))
+       (play-sound 'bullets bullet)
+       (setf last-sound (now)))
      (setf last-shot (now))
      (spawn 'bullet (v! 17 10))
      (spawn 'bullet (v! -17 10)))))
