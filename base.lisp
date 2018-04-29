@@ -81,11 +81,10 @@
   (spawn! 'time-counter (v2:+ pos (v! -30 0)) :multiple 100))
 
 (define-actor background ((:visual "media/background.png")
-                          (:default-depth 95))
-  (:main))
+                          (:default-depth 95)))
 
 (define-actor orb ((:visual "media/orb.png")
-                   (:default-depth 95)
+                   (:default-depth 20)
                    (:tile-count (3 1))
                    (swap-up nil nil))
   (:setup
