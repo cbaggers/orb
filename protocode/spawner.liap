@@ -1,0 +1,21 @@
+(define-actor wall-spawner ((ang 0f0)
+                            (dist 50f0)
+                            (count 120)
+                            (gap 15)
+                            (make 'wall-blue))
+  (:setup
+   (turn-left ang)
+   (move-forward dist)
+   (turn-left 90)
+   (move-forward (* 1 count 0.5))
+   (turn-left 180)
+   (change-state :deploy))
+  (:deploy
+   (loop :for i :below count :do
+      (turn-right 90)
+      (spawn make (v! 0 (* i gap)))
+      (turn-left 90)
+      )
+   (change-state :done))
+  (:done
+   (die)))
