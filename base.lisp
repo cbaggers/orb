@@ -246,13 +246,17 @@
                        (col 0)
                        (ang 0f0 t)
                        (speed 500 t)
-                       (do-scale
-                           (then
-                             (before (seconds 1.4)
-                               (setf (scale) (max 0 (- 1f0 %progress%))))
-                             (once (die))))
+                       (scale 1f0)
+                       (time 1.4)
+                       (do-scale nil t)
                        (range nil t))
   (:setup
+   (let ((scale (float scale 0f0)))
+     (setf do-scale
+           (then
+             (before (seconds 1.4)
+               (setf (scale) (max 0 (- scale (* scale %progress%)))))
+             (once (die)))))
    (turn-left ang)
    (setf range (list (* col 3)
                      (- (* (1+ col) 3) 1)))
@@ -273,10 +277,21 @@
    (move-towards *orb* (per-second 25))
    (turn-towards *orb* (per-second 18))
    (when (coll-with 'bullet)
-     (die))
+     (change-state :dying))
    (when (coll-with 'orb)
      (print "GAAME OOVER MAAAAN")
-     (die))))
+     (change-state :dying)))
+  (:dying
+   (let ((turn 10))
+     (loop :for i :below 5 :do
+        (loop :for j :below 360 :by turn :do
+           (spawn 'sparkle
+                  (v! 0 0)
+                  :scale 2f0
+                  :ang j
+                  :col (random 3)
+                  :speed (* (1+ i) 25f0)))))
+   (die)))
 
 (defun do-wall ()
   (when (< (random 500f0) 1f0)
