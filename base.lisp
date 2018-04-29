@@ -145,7 +145,8 @@
                     (:default-depth 60)
                     (orb nil t)
                     (swap-up nil)
-                    (vel (v! 0 0)))
+                    (vel (v! 0 0))
+                    (last-shot (now)))
   (:main
    (let* ((dir (gamepad-2d (gamepad) 0)))
      (v2:incf vel (v2:*s dir (per-second 80f0)))
@@ -155,13 +156,16 @@
        (turn-left (per-second (* ang 10f0)))))
    (setf swap-up (color-control swap-up))
    (failed)
-   (when (> (pad-1d 1) 0)
-     (spawn 'bullet (v! 0 0)))))
+   (when (and (> (pad-1d 1) 0)
+              (> (- (now) last-shot) 0.01))
+     (setf last-shot (now))
+     (spawn 'bullet (v! 17 10))
+     (spawn 'bullet (v! -17 10)))))
 
 (define-actor bullet ((:visual "media/shot.png")
                       (:default-depth 70))
   (:main
-   (move-forward 25)
+   (move-forward 10)
    (unless (in-world-p)
      (die))))
 
