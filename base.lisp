@@ -231,7 +231,7 @@
        (spawn 'bullet (v! -17 10))))))
 
 (define-actor bullet ((:visual "media/shot.png")
-                      (:default-depth 70))
+                      (:default-depth 69))
   (:main
    (move-forward 10)
    (unless (in-world-p)
