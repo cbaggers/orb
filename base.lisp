@@ -38,7 +38,7 @@
        :for pos := (v2:rotate (v2:*s step step-size) ang)
        :do
        (spawn to-spawn (v2:+ far-center pos)
-              :orb *orb*
+              ;;:orb *orb*
               :ang (+ (degrees ang) 180)))))
 
 (define-god ((missile-timer (make-stepper (seconds 30)
@@ -62,7 +62,8 @@
    (when (funcall missile-timer)
      (let ((mpos (v2:*s (v2:from-angle (random 2pi-f))
                         2200f0)))
-       (spawn 'missile mpos :orb *orb*)))
+       (spawn 'missile mpos;; :orb *orb*
+              )))
    (when (key-down-p key.escape)
      (stop))
    (when (funcall wall-timer)

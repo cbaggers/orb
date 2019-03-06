@@ -15,8 +15,8 @@
 
 ;;------------------------------------------------------------
 
-(defun run ()
-  (daft :start -1 t))
+(defun run (&optional fullscreen)
+  (daft :start -1 fullscreen))
 
 (defun stop ()
   (daft :stop))
